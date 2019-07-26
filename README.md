@@ -18,7 +18,7 @@ Samuel Dumont's python Cowboy [class](https://gitlab.com/samueldumont/python-cow
 ## Installation instructions: 
 
 1. Ensure you have [bitbar](https://github.com/matryer/bitbar/releases/latest) installed.
-2. Execute 'sudo easy_install tinydb keyring pathos pyobjc-framework-CoreLocation googlemaps' in Terminal.app
+2. Execute 'sudo easy_install requests tinydb keyring pathos pyobjc-framework-CoreLocation googlemaps' in Terminal.app
 3. Ensure your bitbar plugins directory does not have a space in the path (A known bitbar bug)
 4. Copy [mycowboy.15m.py](mycowboy.15m.py) to your bitbar plugins folder and chmod +x the file from your terminal in that folder
 5. Run bitbar
