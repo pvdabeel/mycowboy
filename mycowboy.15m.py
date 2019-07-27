@@ -62,7 +62,7 @@ from tinydb     import TinyDB                   # Keep track of location and cow
 from os.path    import expanduser
 from googlemaps import Client as googleclient   # Reverse lookup of addresses based on coordinates
 
-import cowboy
+import library.cowboy as cowboy
 
 
 # Location where to store state files
