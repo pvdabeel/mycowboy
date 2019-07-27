@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env PYTHONIOENCODING=UTF-8 /usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # <bitbar.title>MyCowboy</bitbar.title>
@@ -61,6 +61,8 @@ from datetime   import date
 from tinydb     import TinyDB                   # Keep track of location and cowboy states
 from os.path    import expanduser
 from googlemaps import Client as googleclient   # Reverse lookup of addresses based on coordinates
+
+import cowboy
 
 
 # Location where to store state files
@@ -157,9 +159,7 @@ def init():
     init_access_token = None
 
     try:
-        c = TeslaConnection(init_username,init_password)
-        init_password = ''
-        init_access_token = c.get_token()
+        c = cowboy.Cowboy.with_auth(init_username,init_password)
     except HTTPError as e:
         print ('Error contacting Cowboy servers. Try again later.')
         print e
@@ -174,11 +174,13 @@ def init():
         print e
         return
     keyring.set_password("mycowboy-bitbar","username",init_username)
-    keyring.set_password("mycowboy-bitbar","access_token",init_access_token)
+    keyring.set_password("mycowboy-bitbar","password",init_password)
+    init_password = ''
 
 
 
 USERNAME = keyring.get_password("mycowboy-bitbar","username")  
+
 
 
 # --------------------------
@@ -201,9 +203,6 @@ def main(argv):
         color = 'black' 
         info_color = '#808080'
 
-    USERNAME = keyring.get_password("mycowboy-bitbar","username")
-    ACCESS_TOKEN = keyring.get_password("mycowboy-bitbar","access_token")
-    
     if not USERNAME:   
        # restart in terminal calling init 
        app_print_logo()
@@ -211,15 +210,13 @@ def main(argv):
        return
 
 
-# Further cleanup needed
-
     # CASE 3: init was not called, keyring initialized, no connection (access code not valid)
     try:
        True
        # create connection to cowboy account
-       # c = TeslaConnection(access_token = ACCESS_TOKEN)
-       # vehicles = c.vehicles()
-       # appointments = c.appointments()
+       PASSWORD = keyring.get_password("mycowboy-bitbar","password")
+       bike = cowboy.Cowboy.with_auth(USERNAME,PASSWORD)
+       bike.refreshData()
     except: 
        app_print_logo()
        print ('Login to Cowboy | refresh=true terminal=true bash="\'%s\'" param1="%s" color=%s' % (sys.argv[0], 'init', color))
@@ -227,115 +224,105 @@ def main(argv):
 
 
     # CASE 4: all ok, specific command for a specific bike received
-    if (len(sys.argv) > 1) and not('debug' in argv):
-        # v = vehicles[int(sys.argv[1])]
-
-
-        if sys.argv[2] == "wake_up":
-            v.wake_up()
-        else:
-            if (len(sys.argv) == 2) and (sys.argv[2] != 'remote_start_drive'):
-                True
-                # argv is of the form: CMD + vehicleid + command 
-                # v.command(sys.argv[2])
-            else:
-                True
-                # argv is of the form: CMD + vehicleid + command + key:value pairs 
-                # v.command(sys.argv[2],dict(map(lambda x: x.split(':'),sys.argv[3:])))
-        return
+    # if (len(sys.argv) > 1) and not('debug' in argv):
+    #    # v = vehicles[int(sys.argv[1])]
+    #
+    #
+    #    if sys.argv[2] == "wake_up":
+    #        v.wake_up()
+    #    else:
+    #        if (len(sys.argv) == 2) and (sys.argv[2] != 'remote_start_drive'):
+    #            True
+    #            # argv is of the form: CMD + vehicleid + command 
+    #            # v.command(sys.argv[2])
+    #        else:
+    #            True
+    #            # argv is of the form: CMD + vehicleid + command + key:value pairs 
+    #            # v.command(sys.argv[2],dict(map(lambda x: x.split(':'),sys.argv[3:])))
+    #    return
 
 
     # CASE 5: all ok, all other cases
     app_print_logo()
     prefix = ''
-    if len(vehicles) > 1:
-        # Create a submenu for every bike
-        prefix = '--'
 
-    # loop through bikes, print menu with relevant info       
-    for i, vehicle in enumerate(vehicles):
+    try:
 
-        if prefix:
-           True
-           # print vehicle['display_name']
+        bike_id       = bike.getBike().getId()
+        bike_nickname = bike.getBike().getNickname()
+	bike_firmware = bike.getBike().getFirmwareVersion()
+        bike_position = bike.getBike().getPosition()
+        bike_charge   = bike.getBike().getStateOfCharge()
+        bike_distance = bike.getBike().getTotalDistance()
+        bike_stolen   = bike.getBike().isStolen()
 
-	try:
-           True
-           # get the data for the vehicle       
-           # vehicle_info = vehicle.vehicle_data() 
-        except: 
-           print ('%sError: Failed to get info from Cowboy. Click to try again. | refresh=true terminal=false bash="true" color=%s' % (prefix, color))
-           return         
-
-	vehicle_name = vehicle['display_name']
-	vehicle_vin  = vehicle['vin'] 
-       
-        # add location & battery here
-
-        distance_unit='km'  
-
-        # if _LOCATION_TRACKING_: 
-        #     locationdb.insert({'date':str(datetime.datetime.now()),'vehicle_info':vehicle_info})
+    except:
+        return
 
 
-        # --------------------------------------------------
-        # DEBUG MENU
-        # --------------------------------------------------
 
-        if 'debug' in argv:
-            # print ('>>> vehicle_info:\n%s\n'   % vehicle_info)
-            # print ('>>> gui_settings:\n%s\n'   % gui_settings)
-            # print ('>>> charge_state:\n%s\n'   % charge_state)
-            # print ('>>> climate_state:\n%s\n'  % climate_state)
-            # print ('>>> drive_state:\n%s\n'    % drive_state)
-            # print ('>>> vehicle_state:\n%s\n'  % vehicle_state)
-            # print ('>>> vehicle_config:\n%s\n' % vehicle_config)
-            # print ('>>> appointments:\n%s\n'   % appointments)
-            return
+    # add location & battery here
+
+    distance_unit='km'  
+
+    # if _LOCATION_TRACKING_: 
+    #     locationdb.insert({'date':str(datetime.datetime.now()),'vehicle_info':vehicle_info})
 
 
-        # --------------------------------------------------
-        # BATTERY MENU 
-        # --------------------------------------------------
+    # --------------------------------------------------
+    # DEBUG MENU
+    # --------------------------------------------------
 
-        print ('%sBattery:\t\t\t\t\t\t%s%% %s (%s %s) | color=%s' % (prefix, charge_state['battery_level'], cold_state(battery_loss_cold), battery_distance, distance_unit, color))
- 
-        print ('%s---' % prefix)
+    if 'debug' in argv:
+        print ('>>> id:\n%s\n'         % bike_id)
+        print ('>>> nickname:\n%s\n'   % bike_nickname)
+        print ('>>> firmware:\n%s\n'   % bike_firmware)
+        print ('>>> position:\n%s\n'   % bike_position)
+        print ('>>> charge:\n%s\n'     % bike_charge)
+        print ('>>> distance:\n%s\n'   % bike_distance)
+        print ('>>> stolen:\n%s\n'     % bike_stolen)
+        return
 
 
-        # --------------------------------------------------
-        # VEHICLE STATE MENU 
-        # --------------------------------------------------
+    # --------------------------------------------------
+    # MENU 
+    # --------------------------------------------------
 
-        print ('%sBike State:\t\t\t\t%s %s | color=%s' % (prefix, lock_state(vehicle_state['locked']), sentry_description, color))
+    print ('%sBike:\t\t\t\t\t\t\t%s | color=%s' % (prefix, bike_nickname, color))
+    print ('%sBattery:\t\t\t\t\t\t\t%s%% | color=%s' % (prefix, bike_charge, color))
+    print ('%s---' % prefix)
 
-        # Vehicle location overview
+    print ('%sSerial:\t\t\t\t\t\t\t%s | color=%s' % (prefix, bike_id, info_color))
+    print ('%sFirmware:\t\t\t\t\t\t%s | color=%s' % (prefix, bike_firmware, info_color))
+    print ('%sSecurity:\t\t\t\t\t\tNot Stolen | color=%s' % (prefix, info_color))
 
-        gmaps = googleclient('AIzaSyCtVR6-HQOVMYVGG6vOxWvPxjeggFz39mg')
-        car_location_address = gmaps.reverse_geocode((str(drive_state['latitude']),str(drive_state['longitude'])))[0]['formatted_address']
 
-        print ('%s-----' % prefix)
-        print ('%s--Address:\t\t%s| color=%s' % (prefix, car_location_address, color))
-        print ('%s-----' % prefix)
-        print ('%s--Lat:\t\t\t\t%s| color=%s' % (prefix, drive_state['latitude'], info_color))
-        print ('%s--Lon:\t\t\t\t%s| color=%s' % (prefix, drive_state['longitude'], info_color))
-        print ('%s--Heading:\t\t%s°| color=%s' % (prefix, drive_state['heading'], info_color))
 
-        print ('%s---' % prefix)
+    # --------------------------------------------------
+    # LOCATION MENU 
+    # --------------------------------------------------
+
+    gmaps = googleclient('AIzaSyCtVR6-HQOVMYVGG6vOxWvPxjeggFz39mg')
+    bike_location_address = gmaps.reverse_geocode((str(bike_position['latitude']),str(bike_position['longitude'])))[0]['formatted_address']
+
+    print ('%s--Address:\t\t%s| color=%s' % (prefix, bike_location_address, color))
+    print ('%s--Lat:\t\t\t\t%s| color=%s' % (prefix, bike_position['latitude'], info_color))
+    print ('%s--Lon:\t\t\t\t%s| color=%s' % (prefix, bike_position['longitude'], info_color))
+    print ('%s---' % prefix)
         
         
-        # --------------------------------------------------
-        # VEHICLE MAP MENU 
-        # --------------------------------------------------
+    # --------------------------------------------------
+    # VEHICLE MAP MENU 
+    # --------------------------------------------------
 
-        google_maps = retrieve_google_maps(str(drive_state['latitude']),str(drive_state['longitude']))
-        vehicle_location_map = google_maps[0]
-        vehicle_location_sat = google_maps[1]
+    google_maps = retrieve_google_maps(str(bike_position['latitude']),str(bike_position['longitude']))
+    vehicle_location_map = google_maps[0]
+    vehicle_location_sat = google_maps[1]
 
-        print ('%s|image=%s href="https://maps.google.com?q=%s,%s" color=%s' % (prefix, vehicle_location_map, drive_state['latitude'],drive_state['longitude'],color))
-        print ('%s|image=%s alternate=true href="https://maps.google.com?q=%s,%s" color=%s' % (prefix, vehicle_location_sat, drive_state['latitude'],drive_state['longitude'],color))
+    print ('%s|image=%s href="https://maps.google.com?q=%s,%s" color=%s' % (prefix, vehicle_location_map, bike_position['latitude'],bike_position['longitude'],color))
+    print ('%s|image=%s alternate=true href="https://maps.google.com?q=%s,%s" color=%s' % (prefix, vehicle_location_sat, bike_position['latitude'],bike_position['longitude'],color))
 
-        print ('%s---' % prefix)
+    print ('%s---' % prefix)
 
 
 if __name__ == '__main__':
