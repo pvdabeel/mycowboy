@@ -256,7 +256,9 @@ def main(argv):
 	bike_firmware = bike.getBike().getFirmwareVersion()
         bike_position = bike.getBike().getPosition()
         bike_charge   = bike.getBike().getStateOfCharge()
-        bike_distance = bike.getBike().getTotalDistance()
+        bike_distance = bike.getBike().getTotalDistance() 
+        bike_duration = bike.getBike().getTotalDuration()
+        bike_co2      = bike.getBike().getTotalCO2Saved() / 1000
         bike_stolen   = bike.getBike().isStolen()
 
     except:
@@ -283,6 +285,8 @@ def main(argv):
         print ('>>> position:\n%s\n'   % bike_position)
         print ('>>> charge:\n%s\n'     % bike_charge)
         print ('>>> distance:\n%s\n'   % bike_distance)
+        print ('>>> duration:\n%s\n'   % bike_duration)
+        print ('>>> co2:\n%s\n'        % bike_co2)
         print ('>>> stolen:\n%s\n'     % bike_stolen)
         return
 
@@ -294,8 +298,10 @@ def main(argv):
     print ('%sBike:\t\t\t\t\t\t\t%s | color=%s' % (prefix, bike_nickname, color))
     print ('%sBattery:\t\t\t\t\t\t\t%s%% | color=%s' % (prefix, bike_charge, color))
     print ('%s---' % prefix)
-
-    print ('%sSerial:\t\t\t\t\t\t\t%s | color=%s' % (prefix, bike_id, info_color))
+    print ('%sOdometer:\t\t\t\t\t\t%.2f km | color=%s' % (prefix, bike_distance, info_color))
+    print ('%sCO2 saved:\t\t\t\t\t\t%s kg | color=%s' % (prefix, bike_co2, info_color))
+    print ('%s---' % prefix)
+    print ('%sBike ID:\t\t\t\t\t\t\t#%s | color=%s' % (prefix, bike_id, info_color))
     print ('%sFirmware:\t\t\t\t\t\t%s | color=%s' % (prefix, bike_firmware, info_color))
     print ('%sSecurity:\t\t\t\t\t\tNot Stolen | color=%s' % (prefix, info_color))
 
