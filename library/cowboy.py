@@ -67,6 +67,10 @@ class Bike:
         self.state_of_charge_internal = bike["pcb_battery_state_of_charge"]
         self.firmware_version = bike["firmware_version"]
         self.position = bike["position"]
+        self.model = bike["model"]["description"]
+        self.mac_address = bike["mac_address"]
+        self.serial = bike["serial_number"]
+
 
     def getId(self):
         return self.id
@@ -98,6 +102,15 @@ class Bike:
     def getPosition(self):
         return self.position
 
+    def getModel(self):
+        return self.model
+
+    def getMacAddress(self):
+        return self.mac_address
+
+    def getSerial(self):
+        return self.serial 
+
 
 class Cowboy:
     """Represents the
@@ -113,7 +126,7 @@ class Cowboy:
         self.total_distance = None
         self.total_duration = None
         self.total_co2_saved = None
-
+ 
     @classmethod
     def with_auth(cls, email, password):
         return cls(Authentication(email, password))
@@ -134,6 +147,7 @@ class Cowboy:
                                      client=self.auth.getclient(),
                                      accesstoken=self.auth.getaccesstoken(),
                                      uid=self.auth.getuid())["json"])
+
 
     def getBike(self):
         return self.bike

@@ -260,6 +260,9 @@ def main(argv):
         bike_duration = bike.getBike().getTotalDuration()
         bike_co2      = bike.getBike().getTotalCO2Saved() / 1000
         bike_stolen   = bike.getBike().isStolen()
+        bike_model    = bike.getBike().getModel()
+        bike_mac      = bike.getBike().getMacAddress()
+        bike_serial   = bike.getBike().getSerial()
 
     except:
         return
@@ -287,6 +290,9 @@ def main(argv):
         print ('>>> distance:\n%s\n'   % bike_distance)
         print ('>>> duration:\n%s\n'   % bike_duration)
         print ('>>> co2:\n%s\n'        % bike_co2)
+        print ('>>> mac:\n%s\n'        % bike_mac)
+        print ('>>> serial:\n%s\n'     % bike_serial)
+        print ('>>> model:\n%s\n'      % bike_model)
         print ('>>> stolen:\n%s\n'     % bike_stolen)
         return
 
@@ -302,7 +308,9 @@ def main(argv):
     print ('%sCO2 saved:\t\t\t\t\t\t%s kg | color=%s' % (prefix, bike_co2, info_color))
     print ('%s---' % prefix)
     print ('%sBike ID:\t\t\t\t\t\t\t#%s | color=%s' % (prefix, bike_id, info_color))
+    print ('%sModel:\t\t\t\t\t\t\t%s | color=%s' % (prefix, bike_model, info_color))
     print ('%sFirmware:\t\t\t\t\t\t%s | color=%s' % (prefix, bike_firmware, info_color))
+    print ('%s---' % prefix)
     print ('%sSecurity:\t\t\t\t\t\t%sNot Stolen%s | color=%s' % (prefix, CGREEN, CEND, info_color))
 
 
@@ -313,7 +321,9 @@ def main(argv):
 
     gmaps = googleclient('AIzaSyCtVR6-HQOVMYVGG6vOxWvPxjeggFz39mg')
     bike_location_address = gmaps.reverse_geocode((str(bike_position['latitude']),str(bike_position['longitude'])))[0]['formatted_address']
-
+    print ('%s--Serial:\t\t\t%s| color=%s'     % (prefix, bike_serial, info_color))
+    print ('%s--Mac address:\t%s| color=%s'  % (prefix, bike_mac, info_color))
+    print ('%s-----' % prefix)
     print ('%s--Address:\t\t%s| color=%s' % (prefix, bike_location_address, color))
     print ('%s--Lat:\t\t\t\t%s| color=%s' % (prefix, bike_position['latitude'], info_color))
     print ('%s--Lon:\t\t\t\t%s| color=%s' % (prefix, bike_position['longitude'], info_color))
