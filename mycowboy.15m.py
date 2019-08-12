@@ -273,8 +273,8 @@ def main(argv):
 
     distance_unit='km'  
 
-    # if _LOCATION_TRACKING_: 
-    #     locationdb.insert({'date':str(datetime.datetime.now()),'vehicle_info':vehicle_info})
+    if _LOCATION_TRACKING_: 
+        locationdb.insert({'date':str(datetime.datetime.now()),'bike_position':bike_position,'bike_charge':bike_charge,'bike_distance':bike_distance})
 
 
     # --------------------------------------------------
