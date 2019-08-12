@@ -8,6 +8,11 @@ Displays information regarding your Cowboy bike in the Mac OS X menubar. Allows 
 
 ## Changelog: 
 
+**Update 2019.08.11:**
+- [X] Show bike model, serial, mac address, odometer, co2 saved
+- [X] Enable continuous bike tracking
+- [X] Fix OS X dark mode icon
+
 **Update 2019.07.26:**
 - [X] alpha version 
 - [X] Initial import
