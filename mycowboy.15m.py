@@ -303,7 +303,7 @@ def main(argv):
     print ('%s---' % prefix)
     print ('%sBike ID:\t\t\t\t\t\t\t#%s | color=%s' % (prefix, bike_id, info_color))
     print ('%sFirmware:\t\t\t\t\t\t%s | color=%s' % (prefix, bike_firmware, info_color))
-    print ('%sSecurity:\t\t\t\t\t\tNot Stolen | color=%s' % (prefix, info_color))
+    print ('%sSecurity:\t\t\t\t\t\t%sNot Stolen%s | color=%s' % (prefix, CGREEN, CEND, info_color))
 
 
 
