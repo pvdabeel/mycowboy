@@ -84,7 +84,7 @@ CEND    = '\33[0m'
 CRED    = '\33[31m'
 CGREEN  = '\33[32m'
 CYELLOW = '\33[33m'
-CBLUE   = '\33[34m'
+CBLUE   = '\33[36m'
 
 # Support for OS X Dark Mode
 DARK_MODE=os.getenv('XBARDarkMode',0)
