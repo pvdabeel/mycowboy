@@ -1,12 +1,12 @@
 #!/usr/bin/env PYTHONIOENCODING=UTF-8 /usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# <bitbar.title>MyCowboy</bitbar.title>
-# <bitbar.version>v1.0</bitbar.version>
-# <bitbar.author>pvdabeel@mac.com</bitbar.author>
-# <bitbar.author.github>pvdabeel</bitbar.author.github>
-# <bitbar.desc>Control your Cowboy Bike from the Mac OS X menubar</bitbar.desc>
-# <bitbar.dependencies>python</bitbar.dependencies>
+# <xbar.title>MyCowboy</xbar.title>
+# <xbar.version>v1.0</xbar.version>
+# <xbar.author>pvdabeel@mac.com</xbar.author>
+# <xbar.author.github>pvdabeel</xbar.author.github>
+# <xbar.desc>Control your Cowboy Bike from the Mac OS X menubar</xbar.desc>
+# <xbar.dependencies>python</xbar.dependencies>
 #
 # Licence: GPL v3
 
@@ -17,10 +17,9 @@
 #    sudo easy_install pyicloud
 #    sudo easy_install pyobjc-framework-CoreLocation
 #
-# Ensure you have bitbar installed https://github.com/matryer/bitbar/releases/latest
-# Ensure your bitbar plugins directory does not have a space in the path (known bitbar bug)
-# Copy this file to your bitbar plugins folder and chmod +x the file from your terminal in that folder
-# Run bitbar
+# Ensure you have xbar installed https://github.com/matryer/xbar/releases/latest
+# Copy this file to your xbar plugins folder and chmod +x the file from your terminal in that folder
+# Run xbar
 
 _DEBUG_ = False 
 
@@ -72,6 +71,9 @@ state_dir    = home+'/.state/mycowboy'
 if not os.path.exists(state_dir):
     os.makedirs(state_dir)
 
+# The full path to this file                                                    
+                                                                                
+cmd_path = os.path.realpath(__file__)      
 
 # Location tracking database
 locationdb = TinyDB(state_dir+'/mycowboy-locations.json')
@@ -85,7 +87,7 @@ CYELLOW = '\33[33m'
 CBLUE   = '\33[34m'
 
 # Support for OS X Dark Mode
-DARK_MODE=os.getenv('BitBarDarkMode',0)
+DARK_MODE=os.getenv('XBARDarkMode',0)
 
 
 # Convertor for distance
@@ -209,7 +211,7 @@ def main(argv):
     if not USERNAME:   
        # restart in terminal calling init 
        app_print_logo()
-       print ('Login to Cowboy | refresh=true terminal=true bash="\'%s\'" param1="%s" color=%s' % (sys.argv[0], 'init', color))
+       print ('Login to Cowboy | refresh=true terminal=true shell="\'%s\'" param1="%s" color=%s' % (cmd_path, 'init', color))
        return
 
 
@@ -222,7 +224,7 @@ def main(argv):
        bike.refreshData()
     except: 
        app_print_logo()
-       print ('Login to Cowboy | refresh=true terminal=true bash="\'%s\'" param1="%s" color=%s' % (sys.argv[0], 'init', color))
+       print ('Login to Cowboy | refresh=true terminal=true shell="\'%s\'" param1="%s" color=%s' % (cmd_path, 'init', color))
        return
 
 
@@ -301,17 +303,17 @@ def main(argv):
     # MENU 
     # --------------------------------------------------
 
-    print ('%sBike:\t\t\t\t\t\t\t%s | color=%s' % (prefix, bike_nickname, color))
-    print ('%sBattery:\t\t\t\t\t\t\t%s%% | color=%s' % (prefix, bike_charge, color))
+    print ('%sBike:\t\t\t\t\t%s | color=%s' % (prefix, bike_nickname, color))
+    print ('%sBattery:\t\t\t\t\t%s%% | color=%s' % (prefix, bike_charge, color))
     print ('%s---' % prefix)
-    print ('%sOdometer:\t\t\t\t\t\t%.2f km | color=%s' % (prefix, bike_distance, info_color))
-    print ('%sCO2 saved:\t\t\t\t\t\t%s kg | color=%s' % (prefix, bike_co2, info_color))
+    print ('%sOdometer:\t\t\t\t%.2f km | color=%s' % (prefix, bike_distance, info_color))
+    print ('%sCO2 saved:\t\t\t\t%s kg | color=%s' % (prefix, bike_co2, info_color))
     print ('%s---' % prefix)
-    print ('%sBike ID:\t\t\t\t\t\t\t#%s | color=%s' % (prefix, bike_id, info_color))
-    print ('%sModel:\t\t\t\t\t\t\t%s | color=%s' % (prefix, bike_model, info_color))
-    print ('%sFirmware:\t\t\t\t\t\t%s | color=%s' % (prefix, bike_firmware, info_color))
+    print ('%sBike ID:\t\t\t\t\t#%s | color=%s' % (prefix, bike_id, info_color))
+    print ('%sModel:\t\t\t\t\t%s | color=%s' % (prefix, bike_model, info_color))
+    print ('%sFirmware:\t\t\t\t%s | color=%s' % (prefix, bike_firmware, info_color))
     print ('%s---' % prefix)
-    print ('%sSecurity:\t\t\t\t\t\t%sNot Stolen%s | color=%s' % (prefix, CGREEN, CEND, info_color))
+    print ('%sSecurity:\t\t\t\t\t%sNot Stolen%s | color=%s' % (prefix, CGREEN, CEND, info_color))
 
 
 
@@ -322,9 +324,9 @@ def main(argv):
     gmaps = googleclient('AIzaSyCtVR6-HQOVMYVGG6vOxWvPxjeggFz39mg')
     bike_location_address = gmaps.reverse_geocode((str(bike_position['latitude']),str(bike_position['longitude'])))[0]['formatted_address']
     print ('%s--Serial:\t\t\t%s| color=%s'     % (prefix, bike_serial, info_color))
-    print ('%s--Mac address:\t%s| color=%s'  % (prefix, bike_mac, info_color))
+    print ('%s--Mac address:\t\t%s| color=%s'  % (prefix, bike_mac, info_color))
     print ('%s-----' % prefix)
-    print ('%s--Address:\t\t%s| color=%s' % (prefix, bike_location_address, color))
+    print ('%s--Address:\t\t\t%s| color=%s' % (prefix, bike_location_address, color))
     print ('%s--Lat:\t\t\t\t%s| color=%s' % (prefix, bike_position['latitude'], info_color))
     print ('%s--Lon:\t\t\t\t%s| color=%s' % (prefix, bike_position['longitude'], info_color))
     print ('%s---' % prefix)
