@@ -5,7 +5,7 @@
 # <xbar.version>v1.0</xbar.version>
 # <xbar.author>pvdabeel@mac.com</xbar.author>
 # <xbar.author.github>pvdabeel</xbar.author.github>
-# <xbar.desc>Control your Cowboy Bike from the Mac OS X menubar</xbar.desc>
+# <xbar.desc>Control your Cowboy Bike from the MacOS menubar</xbar.desc>
 # <xbar.dependencies>python</xbar.dependencies>
 #
 # Licence: GPL v3

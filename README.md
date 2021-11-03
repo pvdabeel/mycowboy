@@ -1,7 +1,7 @@
 
 # MyCowboy - MacOS Menubar plugin
 
-Displays information regarding your Cowboy bike in the Mac OS X menubar. Allows you to remotely control your Cowboy bike as well.
+Displays information regarding your Cowboy bike in the MacOS menubar. Allows you to remotely control your Cowboy bike as well.
 
 ![Imgur](https://i.imgur.com/Q45iFOP.png)
 
