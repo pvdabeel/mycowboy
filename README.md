@@ -29,6 +29,6 @@ Samuel Dumont's python Cowboy [class](https://gitlab.com/samueldumont/python-cow
 ## Installation instructions: 
 
 1. Ensure you have [xbar](https://github.com/matryer/xbar/releases/latest) installed.
-2. Execute 'sudo easy_install requests tinydb==3.9 keyring==8.7 pathos pyobjc-framework-CoreLocation googlemaps' in Terminal.app
+2. Execute 'sudo pip install requests tinydb==3.9 keyring==8.7 pathos pyobjc-framework-CoreLocation googlemaps pyicloud' in Terminal.app
 3. Copy [mycowboy.15m.py](mycowboy.15m.py) and library directory with its files to your xbar plugins folder and chmod +x the file from your terminal in that folder
 4. Run xbar

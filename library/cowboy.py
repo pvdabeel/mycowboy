@@ -26,9 +26,6 @@ except: # Python 2 dependencies
 
 import requests
 
-import urlparse 
-from urlparse import urljoin
-
 import pprint
 
 logger = logging.getLogger("cowboy-bike")
