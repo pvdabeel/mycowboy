@@ -215,8 +215,16 @@ def main(argv):
        print ('Login to Cowboy | refresh=true terminal=true shell="\'%s\'" param1="%s" color=%s' % (cmd_path, 'init', color))
        return
 
+    # CASE 3a: check for internet connectivity
+    try:
+       requests.get('http://www.google.com',timeout=3)
+    except:
+       app_print_logo()
+       print ('No internet connection | refresh=true terminal=false shell="\'%s\'" param1="%s" color=%s' % (cmd_path, 'true', color))
+       return
 
-    # CASE 3: init was not called, keyring initialized, no connection (access code not valid)
+
+    # CASE 3b: init was not called, keyring initialized, no connection (access code not valid)
     try:
        True
        # create connection to cowboy account
