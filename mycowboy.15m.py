@@ -212,7 +212,7 @@ def main(argv):
     if not USERNAME:   
        # restart in terminal calling init 
        app_print_logo()
-       print ('Login to Cowboy | refresh=true terminal=true shell="\'%s\'" param1="%s" color=%s' % (cmd_path, 'init', color))
+       print ('Login to Cowboy | refresh=true terminal=true shell="%s" param1="%s" color=%s' % (cmd_path, 'init', color))
        return
 
     # CASE 3a: check for internet connectivity
@@ -220,7 +220,7 @@ def main(argv):
        requests.get('http://www.google.com',timeout=3)
     except:
        app_print_logo()
-       print ('No internet connection | refresh=true terminal=false shell="\'%s\'" param1="%s" color=%s' % (cmd_path, 'true', color))
+       print ('No internet connection | refresh=true terminal=false shell="%s" param1="%s" color=%s' % (cmd_path, 'true', color))
        return
 
 
@@ -233,7 +233,7 @@ def main(argv):
        bike.refreshData()
     except: 
        app_print_logo()
-       print ('Login to Cowboy | refresh=true terminal=true shell="\'%s\'" param1="%s" color=%s' % (cmd_path, 'init', color))
+       print ('Login to Cowboy | refresh=true terminal=true shell="%s" param1="%s" color=%s' % (cmd_path, 'init', color))
        return
 
 
