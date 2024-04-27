@@ -14,7 +14,6 @@
 # -------------------------- 
 # Execute in terminal.app before running : 
 #    sudo easy_install keyring
-#    sudo easy_install pyicloud
 #    sudo easy_install pyobjc-framework-CoreLocation
 #
 # Ensure you have xbar installed https://github.com/matryer/xbar/releases/latest
@@ -49,13 +48,11 @@ import getpass                                  # Getting password without showi
 import time
 import os
 import subprocess
-import pyicloud                                 # Icloud integration - retrieving calendar info 
 import requests
 import binascii
 
 import CoreLocation as cl
 
-from pyicloud   import PyiCloudService          # Icloud integration - schedule events in icloud agenda
 from datetime   import date
 from tinydb     import TinyDB                   # Keep track of location and cowboy states
 from os.path    import expanduser
