@@ -74,6 +74,7 @@ cmd_path = os.path.realpath(__file__)
 
 # Location tracking database
 locationdb = TinyDB(state_dir+'/mycowboy-locations.json')
+geolocdb   = TinyDB(state_dir+'/mycowboy-geoloc.json')
 
 
 # Nice ANSI colors
@@ -136,6 +137,23 @@ def retrieve_google_maps(latitude,longitude):
             location_map.close()
             location_sat.close()
     return [my_img1,my_img2]
+
+def retrieve_geo_loc(latitude,longitude):
+    try:
+        # First try cache
+        result = geolocdb.search((Q.latitude==latitude) & (Q.longitude==longitude))[-1]['geoloc']
+        return result['response']
+    except:
+        # Then try google 
+
+        gmaps = googleclient('AIzaSyCtVR6-HQOVMYVGG6vOxWvPxjeggFz39mg')
+        location_address = gmaps.reverse_geocode((str(latitude),str(longitude)))[0]['formatted_address']
+
+        # Finally Update local cache
+        if _LOCATION_TRACKING_:
+            geolocdb.insert({'latitude':latitude,'longitude':longitude,'geoloc':location_address})
+        return location_address
+
 
 
 # Logo for both dark mode and regular mode
@@ -326,8 +344,9 @@ def main(argv):
     # LOCATION MENU 
     # --------------------------------------------------
 
-    gmaps = googleclient('AIzaSyCtVR6-HQOVMYVGG6vOxWvPxjeggFz39mg')
-    bike_location_address = gmaps.reverse_geocode((str(bike_position['latitude']),str(bike_position['longitude'])))[0]['formatted_address']
+
+    bike_location_address = retrieve_geo_loc(bike_position['latitude'],bike_position['longitude'])
+
     print ('%s--Serial:\t\t\t%s| color=%s'     % (prefix, bike_serial, info_color))
     print ('%s--Mac address:\t\t%s| color=%s'  % (prefix, bike_mac, info_color))
     print ('%s-----' % prefix)
