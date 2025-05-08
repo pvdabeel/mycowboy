@@ -54,7 +54,7 @@ import binascii
 import CoreLocation as cl
 
 from datetime   import date
-from tinydb     import TinyDB                   # Keep track of location and cowboy states
+from tinydb     import TinyDB , Query           # Keep track of location and cowboy states
 from os.path    import expanduser
 from googlemaps import Client as googleclient   # Reverse lookup of addresses based on coordinates
 
@@ -138,9 +138,11 @@ def retrieve_google_maps(latitude,longitude):
             location_sat.close()
     return [my_img1,my_img2]
 
+# Function to retrieve address for a given latitude and longitude
 def retrieve_geo_loc(latitude,longitude):
     try:
         # First try cache
+        Q = Query()
         result = geolocdb.search((Q.latitude==latitude) & (Q.longitude==longitude))[-1]['geoloc']
         return result['response']
     except:
@@ -153,7 +155,6 @@ def retrieve_geo_loc(latitude,longitude):
         if _LOCATION_TRACKING_:
             geolocdb.insert({'latitude':latitude,'longitude':longitude,'geoloc':location_address})
         return location_address
-
 
 
 # Logo for both dark mode and regular mode
@@ -343,7 +344,6 @@ def main(argv):
     # --------------------------------------------------
     # LOCATION MENU 
     # --------------------------------------------------
-
 
     bike_location_address = retrieve_geo_loc(bike_position['latitude'],bike_position['longitude'])
 
