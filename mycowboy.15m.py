@@ -538,14 +538,14 @@ def main(argv: list[str]) -> None:
             print(f'|image={sat_img} alternate=true href="{maps_url}" color={COLOR_FG}')
         print("---")
 
-    print(f"Settings | color={COLOR_INFO}")
+    print(f"Settings | color={COLOR_FG}")
     print(
         f'--Update Google API keys | refresh=true terminal=true '
-        f'shell="{CMD_PATH}" param1="keys" color={COLOR_INFO}'
+        f'shell="{CMD_PATH}" param1="keys" color={COLOR_FG}'
     )
     print(
         f'--Sign out & re-login | refresh=true terminal=true '
-        f'shell="{CMD_PATH}" param1="init" color={COLOR_INFO}'
+        f'shell="{CMD_PATH}" param1="init" color={COLOR_FG}'
     )
 
 
