@@ -1,275 +1,232 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # Published Jul 2019
 # Author : Samuel Dumont, samuel@dumont.info
-# Python 2.7 compatibility modifications by Pieter Van den Abeele, pvdabeel@mac.com
+# Refactor: Pieter Van den Abeele, pvdabeel@mac.com
 # License : MIT
-"""
-This module provides access to the Cowboy Bike's API (https://cowboy.bike)
-"""
-from sys import version_info
-from os import getenv
-from os.path import expanduser, exists
-import json
-import time
-import warnings
-import sys
-import logging
+"""Access to the Cowboy Bike API (https://cowboy.bike).
 
-try:   # Python 3 dependencies
-    from urllib.parse import urlencode 
-    from urllib.request import Request, urlopen, build_opener
-    from urllib.request import ProxyHandler, HTTPBasicAuthHandler, HTTPHandler, HTTPError, URLError
-except: # Python 2 dependencies
-    from urllib import urlencode
-    from urllib2 import Request, urlopen, build_opener
-    from urllib2 import ProxyHandler, HTTPBasicAuthHandler, HTTPHandler, HTTPError, URLError
+This module exposes:
+    * ``Bike``          - a dataclass describing a bike's current state
+    * ``AuthToken``     - the credentials returned by ``/auth/sign_in``
+    * ``Cowboy``        - a high-level client built around a cached token
+    * ``user_exists``   - convenience helper around ``/users/check``
+"""
+
+from __future__ import annotations
+
+import logging
+import time
+from dataclasses import dataclass, field
+from typing import Any, Optional
+from urllib.parse import urljoin
 
 import requests
+from requests.adapters import HTTPAdapter
 
-import pprint
+try:
+    from urllib3.util.retry import Retry
+except ImportError:  # urllib3 < 1.26
+    from requests.packages.urllib3.util.retry import Retry  # type: ignore
 
-logger = logging.getLogger("cowboy-bike")
-logger.setLevel(logging.DEBUG)
-
-handler = logging.StreamHandler(sys.stdout)
-handler.setLevel(logging.ERROR)
-formatter = logging.Formatter(
-    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
 
 COWBOY_URL = "https://app-api.cowboy.bike/"
-CHECK_ENDPOINT = "/users/check"
+CHECK_ENDPOINT = "users/check"
 ME_ENDPOINT = "users/me"
-AUTH_ENDPOINT = "/auth/sign_in"
-WEATHER_URL = "/weather"
-BIKES_ENDPOINT = "/bikes/{}"
+AUTH_ENDPOINT = "auth/sign_in"
+BIKES_ENDPOINT = "bikes/{}"
+
+_APP_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+_DEFAULT_TIMEOUT = 8
+_TOKEN_LEEWAY_SECONDS = 60
+
+logger = logging.getLogger("cowboy-bike")
 
 
+def _make_session() -> requests.Session:
+    """Return a process-wide ``requests.Session`` with sensible retries."""
+    session = requests.Session()
+    retries = Retry(
+        total=1,
+        backoff_factor=0.3,
+        status_forcelist=(429, 500, 502, 503, 504),
+        allowed_methods=frozenset({"GET", "POST"}),
+        raise_on_status=False,
+    )
+    adapter = HTTPAdapter(max_retries=retries, pool_connections=2, pool_maxsize=4)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    return session
+
+
+_SESSION = _make_session()
+
+
+def _headers(
+    client: str = "Android-App",
+    uid: Optional[str] = None,
+    access_token: Optional[str] = None,
+) -> dict[str, str]:
+    headers = {
+        "Content-Type": "application/json;charset=utf-8",
+        "X-Cowboy-App-Token": _APP_TOKEN,
+        "Client": client,
+        "Client-Type": "Android-App",
+    }
+    if uid and access_token:
+        headers["Uid"] = uid
+        headers["Access-Token"] = access_token
+    return headers
+
+
+def _request(
+    method: str,
+    url: str,
+    *,
+    data: Optional[dict] = None,
+    client: str = "Android-App",
+    uid: Optional[str] = None,
+    access_token: Optional[str] = None,
+    timeout: float = _DEFAULT_TIMEOUT,
+) -> dict:
+    headers = _headers(client, uid, access_token)
+    if method == "GET":
+        resp = _SESSION.get(url, headers=headers, timeout=timeout)
+    elif method == "POST":
+        resp = _SESSION.post(url, json=data, headers=headers, timeout=timeout)
+    else:
+        raise ValueError(f"unsupported HTTP method: {method}")
+
+    resp.raise_for_status()
+    try:
+        body: Any = resp.json()
+    except ValueError:
+        body = None
+    return {"json": body, "headers": resp.headers}
+
+
+@dataclass
 class Bike:
-    """Represents a Cowboy Bike
+    id: int
+    nickname: str
+    total_distance: float
+    total_duration: float
+    total_co2_saved: float
+    stolen: bool
+    state_of_charge: int
+    state_of_charge_internal: Optional[int]
+    firmware_version: str
+    position: dict
+    model: str
+    mac_address: str
+    serial: str
 
-    Args:
-        bike (dict): The bike object fetched from the api.
-    """
+    @classmethod
+    def from_api(cls, data: dict) -> "Bike":
+        return cls(
+            id=data["id"],
+            nickname=data.get("nickname", ""),
+            total_distance=data.get("total_distance", 0),
+            total_duration=data.get("total_duration", 0),
+            total_co2_saved=data.get("total_co2_saved", 0),
+            stolen=bool(data.get("stolen", False)),
+            state_of_charge=data.get("battery_state_of_charge", 0),
+            state_of_charge_internal=data.get("pcb_battery_state_of_charge"),
+            firmware_version=data.get("firmware_version", ""),
+            position=data.get("position", {}),
+            model=data.get("model", {}).get("description", ""),
+            mac_address=data.get("mac_address", ""),
+            serial=data.get("serial_number", ""),
+        )
 
-    def __init__(self, bike):
-        self.id = bike["id"]
-        self.nickname = bike["nickname"]
-        self.total_distance = bike["total_distance"]
-        self.total_duration = bike["total_duration"]
-        self.total_co2_saved = bike["total_co2_saved"]
-        self.stolen = bike["stolen"]
-        self.state_of_charge = bike["battery_state_of_charge"]
-        self.state_of_charge_internal = bike["pcb_battery_state_of_charge"]
-        self.firmware_version = bike["firmware_version"]
-        self.position = bike["position"]
-        self.model = bike["model"]["description"]
-        self.mac_address = bike["mac_address"]
-        self.serial = bike["serial_number"]
 
+@dataclass
+class AuthToken:
+    uid: str
+    access_token: str
+    client: str
+    expiry: float
 
-    def getId(self):
-        return self.id
-
-    def getNickname(self):
-        return self.nickname
-
-    def isStolen(self):
-        return self.stolen
-
-    def getStateOfCharge(self):
-        return self.state_of_charge
-
-    def getStateOfChargeInternal(self):
-        return self.state_of_charge_internal
-
-    def getFirmwareVersion(self):
-        return self.firmware_version
-
-    def getTotalDistance(self):
-        return self.total_distance
-
-    def getTotalDuration(self):
-        return self.total_duration
-
-    def getTotalCO2Saved(self):
-        return self.total_co2_saved
-
-    def getPosition(self):
-        return self.position
-
-    def getModel(self):
-        return self.model
-
-    def getMacAddress(self):
-        return self.mac_address
-
-    def getSerial(self):
-        return self.serial 
+    @property
+    def is_valid(self) -> bool:
+        return self.expiry > time.time() + _TOKEN_LEEWAY_SECONDS
 
 
 class Cowboy:
-    """Represents the
+    """High-level Cowboy API client.
 
-    Args:
-        email (str): The user's email.
-        password (str): The users's password.
+    Construct via :meth:`login` (with username/password) or :meth:`from_token`
+    (with a previously cached :class:`AuthToken`).
     """
 
-    def __init__(self, auth):
-        self.auth = auth
-        self.bike = None
-        self.total_distance = None
-        self.total_duration = None
-        self.total_co2_saved = None
- 
+    def __init__(self, token: AuthToken) -> None:
+        self.token = token
+        self.bike: Optional[Bike] = None
+        self.total_distance: Optional[float] = None
+        self.total_duration: Optional[float] = None
+        self.total_co2_saved: Optional[float] = None
+
     @classmethod
-    def with_auth(cls, email, password):
-        return cls(Authentication(email, password))
+    def login(cls, email: str, password: str) -> "Cowboy":
+        token = _login(email, password)
+        return cls(token)
 
-    def refreshData(self):
-        data = _getRequest(urljoin(COWBOY_URL, ME_ENDPOINT),
-                           authenticated=True,
-                           client=self.auth.getclient(),
-                           accesstoken=self.auth.getaccesstoken(),
-                           uid=self.auth.getuid())
+    @classmethod
+    def from_token(cls, token: AuthToken) -> "Cowboy":
+        return cls(token)
 
-        self.total_distance = data["json"]["total_distance"]
-        self.total_duration = data["json"]["total_duration"]
-        self.total_co2_saved = data["json"]["total_co2_saved"]
+    def refresh(self) -> None:
+        """Fetch fresh user + bike data from the API."""
+        if not self.token.is_valid:
+            raise ValueError("auth token expired")
 
-        self.bike = Bike(_getRequest(urljoin(COWBOY_URL, BIKES_ENDPOINT.format(data["json"]["bike"]["id"])),
-                                     authenticated=True,
-                                     client=self.auth.getclient(),
-                                     accesstoken=self.auth.getaccesstoken(),
-                                     uid=self.auth.getuid())["json"])
+        me = _request(
+            "GET",
+            urljoin(COWBOY_URL, ME_ENDPOINT),
+            uid=self.token.uid,
+            access_token=self.token.access_token,
+            client=self.token.client,
+        )["json"]
+        if not me:
+            raise ValueError("empty /users/me response")
 
+        self.total_distance = me.get("total_distance")
+        self.total_duration = me.get("total_duration")
+        self.total_co2_saved = me.get("total_co2_saved")
 
-    def getBike(self):
-        return self.bike
-
-    def getTotalDistance(self):
-        return self.total_distance
-
-    def getTotalDuration(self):
-        return self.total_duration
-
-    def getTotalCO2Saved(self):
-        return self.total_co2_saved
-
-
-class Authentication:
-    """Represents a Cowboy API authentication
-
-    Args:
-        email (str): The user's email.
-        password (str): The users's password.
-    """
-
-    def __init__(self, email, password):
-        data = {"email": email, "password": password}
-        login = _postRequest(urljoin(COWBOY_URL, AUTH_ENDPOINT), data)
-
-        self.uid = login["headers"]["Uid"]
-        self.accesstoken = login["headers"]["Access-Token"]
-        self.client = login["headers"]["Client"]
-        self.expiry = float(login["headers"]["Expiry"])
-
-    def getaccesstoken(self):
-        """Returns the user's access token"""
-        if self.expiry < time.time():
-            raise ValueError("TBD, Renew token")
-        return self.accesstoken
-
-    def getuid(self):
-        """Returns the user's uid (should be the same as the user's email)"""
-        if self.expiry < time.time():
-            raise ValueError("TBD, Renew token")
-        return self.uid
-
-    def getclient(self):
-        """Returns the user's client identifier"""
-        if self.expiry < time.time():
-            raise ValueError("TBD, Renew token")
-        return self.client
+        bike_id = me["bike"]["id"]
+        bike_payload = _request(
+            "GET",
+            urljoin(COWBOY_URL, BIKES_ENDPOINT.format(bike_id)),
+            uid=self.token.uid,
+            access_token=self.token.access_token,
+            client=self.token.client,
+        )["json"]
+        if not bike_payload:
+            raise ValueError("empty /bikes response")
+        self.bike = Bike.from_api(bike_payload)
 
 
-def _getRequest(url, authenticated=False, client="Android-App", uid=None, accesstoken=None, timeout=10):
-
-    response = dict()
-
-    headers = {
-        "Content-Type": "application/json;charset=utf-8",
-        "X-Cowboy-App-Token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-        "Client": client,
-        "Client-Type": "Android-App"
-    }
-
-    if authenticated:
-        if not uid or not accesstoken:
-            raise ValueError("Missing Uid or Access-Token")
-        headers.update({"Uid": uid})
-        headers.update({"Access-Token": accesstoken})
-
-    resp = requests.get(url, headers=headers)
-
-    try:
-        resp.raise_for_status()
-    except requests.exceptions.HTTPError as err:
-        logger.error(err)
-
-    try:
-        response["json"] = resp.json()
-    except:
-        response["json"] = None
-    response["headers"] = resp.headers
-
-    return response
+def _login(email: str, password: str) -> AuthToken:
+    resp = _request(
+        "POST",
+        urljoin(COWBOY_URL, AUTH_ENDPOINT),
+        data={"email": email, "password": password},
+    )
+    headers = resp["headers"]
+    return AuthToken(
+        uid=headers["Uid"],
+        access_token=headers["Access-Token"],
+        client=headers["Client"],
+        expiry=float(headers["Expiry"]),
+    )
 
 
-def _postRequest(url, data=None, authenticated=False, client="Android-App", uid=None, accesstoken=None, timeout=10):
-
-    response = dict()
-
-    headers = {
-        "Content-Type": "application/json;charset=utf-8",
-        "X-Cowboy-App-Token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-        "Client": client,
-        "Client-Type": "Android-App"
-    }
-
-    if authenticated:
-        if not uid or not accesstoken:
-            raise ValueError("Missing Uid or Access-Token")
-        headers.update({"Uid": uid})
-        headers.update({"Access-Token": accesstoken})
-
-    resp = requests.post(url, json=data, headers=headers)
-    try:
-        resp.raise_for_status()
-    except requests.exceptions.HTTPError as err:
-        logger.error(err)
-
-    try:
-        response["json"] = resp.json()
-    except:
-        response["json"] = None
-    response["headers"] = resp.headers
-
-    return response
-
-
-def userExists(email):
-    """Checks that a user exists
-
-    Args:
-        email (str): The user email to check
-    Returns:
-        bool: User exists
-    """
-
-    data = {"email": email}
-    login = _postRequest(urljoin(COWBOY_URL, CHECK_ENDPOINT), data)
-
-    return True if login["json"]["exists"] == "true" else False
+def user_exists(email: str) -> bool:
+    """Return whether an account exists for ``email``."""
+    resp = _request(
+        "POST",
+        urljoin(COWBOY_URL, CHECK_ENDPOINT),
+        data={"email": email},
+    )
+    body = resp.get("json") or {}
+    return str(body.get("exists")).lower() == "true"
