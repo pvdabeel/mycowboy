@@ -253,7 +253,7 @@ def _get_geocode_key() -> Optional[str]:
 def _build_static_map_url(lat: str, lon: str, key: str, *, satellite: bool) -> str:
     base = (
         f"{STATIC_MAP_URL}?center={lat},{lon}&key={key}"
-        f"&zoom=17&size=360x315&markers=color:red%7C{lat},{lon}"
+        f"&zoom=17&size=800x600&markers=color:red%7C{lat},{lon}"
     )
     if satellite:
         return base + "&maptype=hybrid"
@@ -532,10 +532,10 @@ def main(argv: list[str]) -> None:
 
         map_img, sat_img = retrieve_google_maps(lat, lon)
         maps_url = f"https://maps.google.com?q={lat},{lon}"
-        if map_img:
-            print(f'|image={map_img} href="{maps_url}" color={COLOR_FG}')
         if sat_img:
-            print(f'|image={sat_img} alternate=true href="{maps_url}" color={COLOR_FG}')
+            print(f'|image={sat_img} href="{maps_url}" color={COLOR_FG}')
+        if map_img:
+            print(f'|image={map_img} alternate=true href="{maps_url}" color={COLOR_FG}')
         print("---")
 
     print(f"Settings | color={COLOR_FG}")
